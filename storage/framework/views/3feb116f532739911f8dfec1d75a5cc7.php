@@ -73,7 +73,7 @@
 <?php endif; ?>
         <!-- ..::  navbar end ::.. -->
         <div class="dashboard-main-body">
-            
+
             <!-- ..::  breadcrumb  start ::.. -->
             <?php if (isset($component)) { $__componentOriginale19f62b34dfe0bfdf95075badcb45bc2 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginale19f62b34dfe0bfdf95075badcb45bc2 = $attributes; } ?>
@@ -98,7 +98,7 @@
             <!-- ..::  header area end ::.. -->
 
             <?php echo $__env->yieldContent('content'); ?>
-        
+
         </div>
         <!-- ..::  footer  start ::.. -->
         <?php if (isset($component)) { $__componentOriginal8a8716efb3c62a45938aca52e78e0322 = $component; } ?>
@@ -150,4 +150,6 @@
 
 </body>
 
-</html><?php /**PATH D:\Project\Experiment\pos_app\resources\views/layout/layout.blade.php ENDPATH**/ ?>
+</html>
+
+<?php /**PATH D:\Project\Experiment\pos_app\resources\views/layout/layout.blade.php ENDPATH**/ ?>

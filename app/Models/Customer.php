@@ -10,15 +10,21 @@ class Customer extends Model
     use HasFactory;
 
     protected $fillable = [
+        'store_id', // dari migration alter table
         'name',
         'email',
         'phone',
         'address',
-        'notes',
+        'notes'
     ];
 
     public function sales()
     {
         return $this->hasMany(Sale::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

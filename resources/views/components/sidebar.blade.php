@@ -18,7 +18,7 @@
                 </a>
             </li>
 
-            @if(auth()->user()->role === 'admin' || auth()->user()->role === 'cashier')
+            @if(auth()->user()->role === 'owner' || auth()->user()->role === 'store_admin' || auth()->user()->role === 'cashier')
             <li class="sidebar-menu-group-title">POS</li>
             <li>
                 <a href="{{ route('pos') }}">
@@ -28,7 +28,7 @@
             </li>
             @endif
 
-            @if(auth()->user()->role === 'admin' || auth()->user()->role === 'purchase')
+            @if(auth()->user()->role === 'owner' || auth()->user()->role === 'store_admin' || auth()->user()->role === 'purchasing')
             <li>
                 <a href="{{ route('products.index') }}">
                     <iconify-icon icon="mdi:package-variant" class="menu-icon"></iconify-icon>
@@ -43,7 +43,7 @@
             </li>
             @endif
 
-            @if(auth()->user()->role === 'admin' || auth()->user()->role === 'cashier')
+            @if(auth()->user()->role === 'owner' || auth()->user()->role === 'store_admin' || auth()->user()->role === 'cashier')
             <li>
                 <a href="{{ route('customers.index') }}">
                     <iconify-icon icon="mdi:account-group-outline" class="menu-icon"></iconify-icon>
@@ -58,11 +58,17 @@
             </li>
             @endif
 
-            @if(auth()->user()->role === 'admin' || auth()->user()->role === 'purchase')
+            @if(auth()->user()->role === 'owner' || auth()->user()->role === 'store_admin' || auth()->user()->role === 'purchasing')
             <li>
                 <a href="{{ route('purchases.index') }}">
                     <iconify-icon icon="mdi:truck-outline" class="menu-icon"></iconify-icon>
                     <span>Pembelian</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('shippings.index') }}">
+                    <iconify-icon icon="mdi:truck-delivery-outline" class="menu-icon"></iconify-icon>
+                    <span>Pengiriman</span>
                 </a>
             </li>
             <li>
@@ -73,7 +79,16 @@
             </li>
             @endif
 
-            @if(auth()->user()->role === 'admin')
+            @if(auth()->user()->role === 'owner' || auth()->user()->role === 'purchasing')
+            <li>
+                <a href="{{ route('stores.index') }}">
+                    <iconify-icon icon="mdi:store" class="menu-icon"></iconify-icon>
+                    <span>Manajemen Toko</span>
+                </a>
+            </li>
+            @endif
+
+            @if(auth()->user()->role === 'owner')
             <li>
                 <a href="{{ route('users.index') }}">
                     <iconify-icon icon="mdi:account-key-outline" class="menu-icon"></iconify-icon>

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->string('role')->default('cashier'); // Default role set to 'user'
+            $table->enum('role', ['owner', 'purchasing', 'store_admin', 'cashier'])->default('cashier');
             $table->rememberToken();
             $table->timestamps();
         });

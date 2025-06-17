@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Category;
+use App\Models\Store;
 
 class CategoryController extends Controller
 {
@@ -12,7 +13,14 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        $categories = Category::paginate(15);
+        $query = Category::query();
+
+        // Filter by store if user doesn't have global access
+        if (!auth()->user()->hasGlobalAccess()) {
+            $query->where('store_id', auth()->user()->current_store_id);
+        }
+
+        $categories = $query->paginate(15);
         return view('categories.index', compact('categories'));
     }
 
@@ -21,7 +29,11 @@ class CategoryController extends Controller
      */
     public function create()
     {
-        return view('categories.create');
+        $stores = [];
+        if (auth()->user()->hasGlobalAccess()) {
+            $stores = Store::where('is_active', true)->get();
+        }
+        return view('categories.create', compact('stores'));
     }
 
     /**
@@ -32,7 +44,21 @@ class CategoryController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'store_id' => auth()->user()->hasGlobalAccess() ? 'required|exists:stores,id' : 'prohibited'
         ]);
+
+        // Set store_id based on user access
+        if (auth()->user()->hasGlobalAccess()) {
+            // Store ID from request for global access users
+            $storeId = $request->store_id;
+        } else {
+            // Current store ID for non-global access users
+            $storeId = auth()->user()->current_store_id;
+        }
+
+        // Add store_id to validated data
+        $validated['store_id'] = $storeId;
+
         Category::create($validated);
         return redirect()->route('categories.index')->with('success', 'Kategori berhasil ditambahkan.');
     }

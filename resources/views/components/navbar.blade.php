@@ -17,6 +17,13 @@
         </div>
         <div class="col-auto">
             <div class="d-flex flex-wrap align-items-center gap-3">
+                <!-- Switch Store Button untuk non-owner/purchases -->
+                @if(!auth()->user()->hasGlobalAccess())
+                    <a href="{{ route('store.select') }}" class="w-40-px h-40-px bg-neutral-100 rounded-circle d-flex justify-content-center align-items-center" title="Switch Toko">
+                        <iconify-icon icon="mdi:store" class="icon text-xl"></iconify-icon>
+                    </a>
+                @endif
+
                 <button type="button" data-theme-toggle class="w-40-px h-40-px bg-neutral-200 rounded-circle d-flex justify-content-center align-items-center"></button>
 
                 <div class="dropdown">

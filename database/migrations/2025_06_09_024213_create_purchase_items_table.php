@@ -16,7 +16,8 @@ return new class extends Migration
             $table->unsignedBigInteger('purchase_id');
             $table->unsignedBigInteger('product_id');
             $table->integer('quantity');
-            $table->decimal('price', 15, 2);
+            $table->decimal('price', 15, 2);  // current selling price
+            $table->decimal('buy_price', 15, 2);  // purchase/buy price
             $table->decimal('subtotal', 15, 2);
             $table->timestamps();
 

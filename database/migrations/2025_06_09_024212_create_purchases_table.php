@@ -17,6 +17,8 @@ return new class extends Migration
             $table->dateTime('purchase_date');
             $table->string('supplier')->nullable();
             $table->decimal('total', 15, 2);
+            $table->enum('status', ['drafted', 'shipped', 'completed'])->default('drafted');
+            $table->dateTime('ship_date')->nullable();
             $table->string('note')->nullable();
             $table->timestamps();
 

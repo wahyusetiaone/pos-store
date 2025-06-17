@@ -7,11 +7,19 @@ use Illuminate\Database\Eloquent\Model;
 class Purchase extends Model
 {
     protected $fillable = [
+        'store_id', // dari migration alter table
         'user_id',
         'purchase_date',
         'supplier',
         'total',
-        'note',
+        'status',
+        'ship_date',
+        'note'
+    ];
+
+    protected $casts = [
+        'purchase_date' => 'datetime',
+        'ship_date' => 'datetime'
     ];
 
     public function user()
@@ -22,5 +30,10 @@ class Purchase extends Model
     public function items()
     {
         return $this->hasMany(PurchaseItem::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

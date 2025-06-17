@@ -7,6 +7,7 @@ use App\Models\Sale;
 use App\Models\Customer;
 use App\Models\User;
 use App\Models\SaleItem;
+use App\Models\Store;
 use Illuminate\Support\Facades\DB;
 
 class SaleController extends Controller
@@ -16,7 +17,14 @@ class SaleController extends Controller
      */
     public function index()
     {
-        $sales = Sale::with(['customer', 'user'])->paginate(15);
+        $query = Sale::with(['customer', 'user']);
+
+        // Filter by store if user doesn't have global access
+        if (!auth()->user()->hasGlobalAccess()) {
+            $query->where('store_id', auth()->user()->current_store_id);
+        }
+
+        $sales = $query->paginate(15);
         return view('sales.index', compact('sales'));
     }
 
@@ -25,9 +33,18 @@ class SaleController extends Controller
      */
     public function create()
     {
-        $customers = Customer::all();
-        $users = User::all();
-        return view('sales.create', compact('customers', 'users'));
+        $stores = [];
+        if (auth()->user()->hasGlobalAccess()) {
+            $stores = Store::where('is_active', true)->get();
+        }
+
+        $customers = Customer::query();
+        if (!auth()->user()->hasGlobalAccess()) {
+            $customers->where('store_id', auth()->user()->current_store_id);
+        }
+        $customers = $customers->get();
+
+        return view('sales.create', compact('stores', 'customers'));
     }
 
     /**
@@ -47,13 +64,25 @@ class SaleController extends Controller
                 $customer = Customer::create([
                     'name' => $request->customer_name,
                     'phone' => $request->customer_phone,
+                    'store_id' => auth()->user()->hasGlobalAccess() ? $request->store_id : auth()->user()->current_store_id
                 ]);
+            }
+
+            // Set store_id based on user access
+            if (auth()->user()->hasGlobalAccess()) {
+                $storeId = $request->store_id;
+                if (!$storeId) {
+                    throw new \Exception('Store ID is required for global access users');
+                }
+            } else {
+                $storeId = auth()->user()->current_store_id;
             }
 
             // Create sale
             $sale = Sale::create([
+                'store_id' => $storeId,
                 'customer_id' => $customer ? $customer->id : null,
-                'user_id' => 1,
+                'user_id' => auth()->id(),
                 'sale_date' => now(),
                 'total' => $request->total,
                 'discount' => $request->discount,

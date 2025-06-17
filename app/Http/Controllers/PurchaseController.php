@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use App\Models\Purchase;
 use App\Models\User;
 use App\Models\PurchaseItem;
+use App\Models\Store;
+use App\Models\Product;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseController extends Controller
 {
@@ -14,7 +17,14 @@ class PurchaseController extends Controller
      */
     public function index()
     {
-        $purchases = Purchase::with('user')->paginate(15);
+        $query = Purchase::with('user');
+
+        // Filter by store if user doesn't have global access
+        if (!auth()->user()->hasGlobalAccess()) {
+            $query->where('store_id', auth()->user()->current_store_id);
+        }
+
+        $purchases = $query->paginate(15);
         return view('purchases.index', compact('purchases'));
     }
 
@@ -23,8 +33,19 @@ class PurchaseController extends Controller
      */
     public function create()
     {
-        $users = User::all();
-        return view('purchases.create', compact('users'));
+        $stores = [];
+        $categories = [];
+        if (auth()->user()->hasGlobalAccess()) {
+            $stores = Store::where('is_active', true)->get();
+        }
+
+        $products = Product::query();
+        if (!auth()->user()->hasGlobalAccess()) {
+            $products->where('store_id', auth()->user()->current_store_id);
+        }
+        $products = $products->get();
+
+        return view('purchases.create', compact('stores', 'products', 'categories'));
     }
 
     /**
@@ -32,15 +53,66 @@ class PurchaseController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'purchase_date' => 'required|date',
-            'supplier' => 'required|string|max:255',
-            'total' => 'required|numeric',
-            'note' => 'nullable|string',
-        ]);
-        Purchase::create($validated);
-        return redirect()->route('purchases.index')->with('success', 'Pembelian berhasil ditambahkan.');
+        try {
+            DB::beginTransaction();
+
+            $validated = $request->validate([
+                'purchase_date' => 'required|date',
+                'supplier' => 'required|string|max:255',
+                'total' => 'required|numeric',
+                'note' => 'nullable|string',
+                'store_id' => auth()->user()->hasGlobalAccess() ? 'required|exists:stores,id' : 'prohibited',
+                'items' => 'required|array|min:1',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.quantity' => 'required|integer|min:1',
+                'items.*.price' => 'required|numeric|min:0',
+                'items.*.buy_price' => 'required|numeric|min:0',
+            ]);
+
+            // Set store_id based on user access
+            if (auth()->user()->hasGlobalAccess()) {
+                $storeId = $request->store_id;
+            } else {
+                $storeId = auth()->user()->current_store_id;
+            }
+
+            // Create purchase
+            $purchase = Purchase::create([
+                'store_id' => $storeId,
+                'user_id' => auth()->id(),
+                'purchase_date' => $request->purchase_date,
+                'supplier' => $request->supplier,
+                'total' => $request->total,
+                'status' => 'drafted',
+                'note' => $request->note
+            ]);
+
+            // Create purchase items
+            foreach ($request->items as $item) {
+                PurchaseItem::create([
+                    'purchase_id' => $purchase->id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'price' => $item['price'],
+                    'buy_price' => $item['buy_price'],
+                    'subtotal' => $item['quantity'] * $item['buy_price']
+                ]);
+            }
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => 'Pembelian berhasil disimpan',
+                'data' => $purchase->load('items.product')
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan pembelian: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -48,6 +120,10 @@ class PurchaseController extends Controller
      */
     public function show(Purchase $purchase)
     {
+        if (request()->wantsJson()) {
+            return response()->json($purchase->load(['items.product']));
+        }
+
         $purchase->load(['user', 'items']);
         return view('purchases.show', compact('purchase'));
     }
@@ -84,5 +160,34 @@ class PurchaseController extends Controller
     {
         $purchase->delete();
         return redirect()->route('purchases.index')->with('success', 'Pembelian berhasil dihapus.');
+    }
+
+    // Add method untuk update status
+    public function updateStatus(Request $request, Purchase $purchase)
+    {
+        $validated = $request->validate([
+            'status' => 'required|in:drafted,shipped,completed',
+            'ship_date' => 'required_if:status,shipped|nullable|date'
+        ]);
+
+        $purchase->update([
+            'status' => $request->status,
+            'ship_date' => $request->ship_date
+        ]);
+
+        // Jika status completed, update stok produk
+        if ($request->status === 'completed') {
+            foreach ($purchase->items as $item) {
+                $product = $item->product;
+                $product->update([
+                    'stock' => $product->stock + $item->quantity
+                ]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status pembelian berhasil diperbarui'
+        ]);
     }
 }

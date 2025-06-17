@@ -9,13 +9,14 @@ class Product extends Model
 {
     use HasFactory;
     protected $fillable = [
+        'store_id', // dari migration alter table
+        'category_id',
         'name',
         'sku',
         'price',
         'stock',
-        'category_id',
         'description',
-        'status',
+        'status'
     ];
 
     public function category()
@@ -26,5 +27,10 @@ class Product extends Model
     public function images()
     {
         return $this->hasMany(ProductImage::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

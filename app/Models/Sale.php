@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Sale extends Model
 {
     protected $fillable = [
+        'store_id', // dari migration alter table
         'customer_id',
         'user_id',
         'sale_date',
@@ -14,7 +15,7 @@ class Sale extends Model
         'discount',
         'paid',
         'payment_method',
-        'note',
+        'note'
     ];
 
     public function customer()
@@ -30,5 +31,10 @@ class Sale extends Model
     public function items()
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    public function store()
+    {
+        return $this->belongsTo(Store::class);
     }
 }

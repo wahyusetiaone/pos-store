@@ -6,6 +6,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\ShippingController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ComponentpageController;
@@ -13,13 +14,15 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\FinanceController;
+use App\Http\Controllers\StoreController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'store.access'])->group(function () {
     // Profile routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -47,8 +50,16 @@ Route::middleware('auth')->group(function () {
     Route::resource('customers', CustomerController::class);
     Route::resource('sales', SaleController::class);
     Route::resource('purchases', PurchaseController::class);
+    Route::resource('shippings', ShippingController::class);
+    Route::post('/shippings/{shipping}/status', [ShippingController::class, 'updateStatus'])->name('shippings.update-status');
     Route::resource('users', UsersController::class);
     Route::resource('finances', FinanceController::class);
+    Route::resource('stores', StoreController::class);
+
+    // Store user management routes
+    Route::get('/stores/{store}/users', [StoreController::class, 'users'])->name('stores.users');
+    Route::post('/stores/{store}/users', [StoreController::class, 'assignUser'])->name('stores.assign-user');
+    Route::delete('/stores/{store}/users/{user}', [StoreController::class, 'removeUser'])->name('stores.remove-user');
 
     // Component page routes
     Route::get('/components/alert', [ComponentpageController::class, 'alert'])->name('components.alert');
@@ -110,6 +121,18 @@ Route::middleware('auth')->group(function () {
 
     // Search routes
     Route::get('/customers/search', [CustomerController::class, 'search'])->name('customers.search');
+
+    // API route untuk categories by store
+    Route::get('/api/categories', function (Request $request) {
+        $categories = App\Models\Category::where('store_id', $request->store_id)->get();
+        return response()->json($categories);
+    })->name('api.categories');
+});
+
+// Store Selection Routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/store/select', [StoreController::class, 'select'])->name('store.select');
+    Route::post('/store/switch', [StoreController::class, 'switch'])->name('store.switch');
 });
 
 require __DIR__.'/auth.php';

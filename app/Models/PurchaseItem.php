@@ -11,7 +11,14 @@ class PurchaseItem extends Model
         'product_id',
         'quantity',
         'price',
+        'buy_price',
         'subtotal',
+    ];
+
+    protected $casts = [
+        'price' => 'decimal:2',
+        'buy_price' => 'decimal:2',
+        'subtotal' => 'decimal:2'
     ];
 
     public function purchase()

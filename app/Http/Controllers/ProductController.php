@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\ProductImage;
+use App\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -13,6 +14,11 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $query = Product::with('category', 'images');
+
+        // Filter by store if user doesn't have global access
+        if (!auth()->user()->hasGlobalAccess()) {
+            $query->where('store_id', auth()->user()->current_store_id);
+        }
 
         // Filter by category if provided
         if ($request->category_id) {
@@ -25,7 +31,13 @@ class ProductController extends Controller
         }
 
         $products = $query->paginate(15);
-        $categories = Category::all();
+
+        // Get categories based on store access
+        $categoryQuery = Category::query();
+        if (!auth()->user()->hasGlobalAccess()) {
+            $categoryQuery->where('store_id', auth()->user()->current_store_id);
+        }
+        $categories = $categoryQuery->get();
 
         if ($request->ajax() || ($request->acceptsJson() && $request->isJson())) {
             return response()->json([
@@ -39,8 +51,18 @@ class ProductController extends Controller
 
     public function create()
     {
-        $categories = Category::all();
-        return view('products.create', compact('categories'));
+        $categories = Category::query();
+        $stores = [];
+
+        if (auth()->user()->hasGlobalAccess()) {
+            $stores = Store::where('is_active', true)->get();
+        } else {
+            // Filter categories by current store
+            $categories->where('store_id', auth()->user()->current_store_id);
+        }
+
+        $categories = $categories->get();
+        return view('products.create', compact('categories', 'stores'));
     }
 
     public function store(Request $request)
@@ -53,8 +75,21 @@ class ProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
             'status' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:4048'
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:4048',
+            'store_id' => auth()->user()->hasGlobalAccess() ? 'required|exists:stores,id' : 'prohibited'
         ]);
+
+        // Set store_id based on user access
+        if (auth()->user()->hasGlobalAccess()) {
+            // Store ID from request for global access users
+            $storeId = $request->store_id;
+        } else {
+            // Current store ID for non-global access users
+            $storeId = auth()->user()->current_store_id;
+        }
+
+        // Add store_id to validated data
+        $validated['store_id'] = $storeId;
 
         // Create product
         $product = Product::create($validated);
@@ -68,6 +103,15 @@ class ProductController extends Controller
                 'product_id' => $product->id,
                 'image_path' => str_replace('public/', '', $imagePath),
                 'is_primary' => true
+            ]);
+        }
+
+        // If request is AJAX, return JSON response
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Produk berhasil ditambahkan',
+                'product' => $product
             ]);
         }
 

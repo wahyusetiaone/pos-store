@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class User extends Authenticatable
 {
@@ -22,6 +24,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'current_store_id'
     ];
 
     /**
@@ -45,5 +48,29 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function currentStore()
+    {
+        return $this->belongsTo(Store::class, 'current_store_id');
+    }
+
+    public function stores()
+    {
+        return $this->belongsToMany(Store::class, 'user_store')->withTimestamps();
+    }
+
+    public function hasGlobalAccess(): bool
+    {
+        return in_array($this->role, ['owner', 'purchasing']);
+    }
+
+    public function canAccessStore($storeId): bool
+    {
+        if ($this->hasGlobalAccess()) {
+            return true;
+        }
+
+        return $this->stores()->where('store_id', $storeId)->exists();
     }
 }

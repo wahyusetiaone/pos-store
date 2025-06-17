@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Finance;
 use App\Models\User;
+use App\Models\Store;
 use Illuminate\Http\Request;
 
 class FinanceController extends Controller
@@ -13,7 +14,14 @@ class FinanceController extends Controller
      */
     public function index()
     {
-        $finances = Finance::with('user')->paginate(15);
+        $query = Finance::with('user');
+
+        // Filter by store if user doesn't have global access
+        if (!auth()->user()->hasGlobalAccess()) {
+            $query->where('store_id', auth()->user()->current_store_id);
+        }
+
+        $finances = $query->paginate(15);
         return view('finances.index', compact('finances'));
     }
 
@@ -23,7 +31,11 @@ class FinanceController extends Controller
     public function create()
     {
         $users = User::all();
-        return view('finances.create', compact('users'));
+        $stores = [];
+        if (auth()->user()->hasGlobalAccess()) {
+            $stores = Store::where('is_active', true)->get();
+        }
+        return view('finances.create', compact('users', 'stores'));
     }
 
     /**
@@ -38,7 +50,21 @@ class FinanceController extends Controller
             'amount' => 'required|numeric',
             'description' => 'nullable|string',
             'user_id' => 'required|exists:users,id',
+            'store_id' => auth()->user()->hasGlobalAccess() ? 'required|exists:stores,id' : 'prohibited'
         ]);
+
+        // Set store_id based on user access
+        if (auth()->user()->hasGlobalAccess()) {
+            // Store ID from request for global access users
+            $storeId = $request->store_id;
+        } else {
+            // Current store ID for non-global access users
+            $storeId = auth()->user()->current_store_id;
+        }
+
+        // Add store_id to validated data
+        $validated['store_id'] = $storeId;
+
         Finance::create($validated);
         return redirect()->route('finances.index')->with('success', 'Transaksi keuangan berhasil ditambahkan.');
     }

@@ -3,12 +3,20 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Customer;
+use App\Models\Store;
 
 class CustomerSeeder extends Seeder
 {
     public function run(): void
     {
-        Customer::factory()->count(20)->create();
+        $stores = Store::pluck('id')->toArray();
+
+        foreach ($stores as $storeId) {
+            Customer::factory()
+                ->count(20)
+                ->create([
+                    'store_id' => $storeId
+                ]);
+        }
     }
 }
-
