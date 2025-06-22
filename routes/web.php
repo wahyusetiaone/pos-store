@@ -15,6 +15,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\StoreController;
+use App\Http\Controllers\GalleryController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -50,11 +51,24 @@ Route::middleware(['auth', 'store.access'])->group(function () {
     Route::resource('customers', CustomerController::class);
     Route::resource('sales', SaleController::class);
     Route::resource('purchases', PurchaseController::class);
-    Route::resource('shippings', ShippingController::class);
+    Route::patch('purchases/{purchase}/status', [PurchaseController::class, 'updateStatus'])->name('purchases.update-status');
+    Route::resource('shippings', ShippingController::class)->parameters([
+        'shippings' => 'shipping'
+    ])->where([
+        'shipping' => '[0-9]+'
+    ]);
+    Route::get('/shippings/search', [ShippingController::class, 'search'])->name('shippings.search');
     Route::post('/shippings/{shipping}/status', [ShippingController::class, 'updateStatus'])->name('shippings.update-status');
+    Route::post('/shippings/{shipping}/accepter', [ShippingController::class, 'accepter'])->name('shippings.accepter')->where('shipping', '[0-9]+');
+    Route::get('/shippings/{shipping}/surat-jalan', [ShippingController::class, 'suratJalan'])
+        ->name('shippings.surat-jalan')->where('shipping', '[0-9]+');
     Route::resource('users', UsersController::class);
     Route::resource('finances', FinanceController::class);
     Route::resource('stores', StoreController::class);
+
+    Route::get('/gallery/images', [GalleryController::class, 'images'])->name('gallery.images');
+    Route::get('/gallery/search', [GalleryController::class, 'search'])->name('gallery.search');
+    Route::resource('gallery', GalleryController::class);
 
     // Store user management routes
     Route::get('/stores/{store}/users', [StoreController::class, 'users'])->name('stores.users');
@@ -127,6 +141,11 @@ Route::middleware(['auth', 'store.access'])->group(function () {
         $categories = App\Models\Category::where('store_id', $request->store_id)->get();
         return response()->json($categories);
     })->name('api.categories');
+
+    // Gallery routes
+    Route::get('/gallery', [GalleryController::class, 'index'])->name('gallery.index');
+    Route::post('/gallery', [GalleryController::class, 'store'])->name('gallery.store');
+    Route::delete('/gallery/{image}', [GalleryController::class, 'destroy'])->name('gallery.destroy');
 });
 
 // Store Selection Routes

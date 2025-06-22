@@ -15,6 +15,9 @@ class Finance extends Model
         'description',
         'user_id'
     ];
+    protected $casts = [
+        'date' => 'date',
+    ];
 
     public function user()
     {

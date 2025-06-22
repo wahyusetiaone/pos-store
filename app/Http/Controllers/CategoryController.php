@@ -20,7 +20,7 @@ class CategoryController extends Controller
             $query->where('store_id', auth()->user()->current_store_id);
         }
 
-        $categories = $query->paginate(15);
+        $categories = $query->orderByDesc('id')->paginate(15);
         return view('categories.index', compact('categories'));
     }
 

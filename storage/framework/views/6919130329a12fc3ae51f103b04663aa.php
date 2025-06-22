@@ -1,6 +1,7 @@
 <?php
     $title = 'Daftar Pembelian';
     $subTitle = 'Tabel Pembelian';
+    $script = '<script src="' . asset('assets/js/pages/purchase/index.js') . '"></script>';
 ?>
 
 <?php $__env->startSection('content'); ?>
@@ -18,9 +19,14 @@
                     <table class="table bordered-table mb-0">
                         <thead>
                             <tr>
+                                <th>No</th>
+                                <?php if(auth()->user()->hasGlobalAccess()): ?>
+                                    <th>Nama Toko</th>
+                                <?php endif; ?>
                                 <th>Tanggal</th>
                                 <th>Supplier</th>
                                 <th>Total</th>
+                                <th>Status</th>
                                 <th>User</th>
                                 <th class="text-center">Aksi</th>
                             </tr>
@@ -28,30 +34,42 @@
                         <tbody>
                             <?php $__currentLoopData = $purchases; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $purchase): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <tr>
+                                    <td><?php echo e(($purchases->currentPage() - 1) * $purchases->perPage() + $loop->iteration); ?></td>
+                                    <?php if(auth()->user()->hasGlobalAccess()): ?>
+                                        <td><?php echo e($purchase->store->name ?? '-'); ?></td>
+                                    <?php endif; ?>
                                     <td><?php echo e($purchase->purchase_date); ?></td>
                                     <td><?php echo e($purchase->supplier); ?></td>
                                     <td>Rp <?php echo e(number_format($purchase->total, 0, ',', '.')); ?></td>
+                                    <td>
+                                        <?php if($purchase->status == 'drafted'): ?>
+                                            <span class="badge bg-warning">Draft</span>
+                                        <?php elseif($purchase->status == 'shipped'): ?>
+                                            <span class="badge bg-info">Dikirim</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-success">Selesai</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?php echo e($purchase->user->name ?? '-'); ?></td>
                                     <td class="text-center">
-                                        <a href="<?php echo e(route('purchases.show', $purchase->id)); ?>" class="w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center me-1" title="Lihat">
-                                            <iconify-icon icon="iconamoon:eye-light"></iconify-icon>
-                                        </a>
-                                        <a href="<?php echo e(route('purchases.edit', $purchase->id)); ?>" class="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center me-1" title="Ubah">
-                                            <iconify-icon icon="lucide:edit"></iconify-icon>
-                                        </a>
-                                        <button type="button"
-                                                class="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center me-1"
-                                                title="Kirim"
-                                                onclick="openShippingModal(<?php echo e($purchase->id); ?>)">
-                                            <iconify-icon icon="mdi:truck-delivery"></iconify-icon>
-                                        </button>
-                                        <form action="<?php echo e(route('purchases.destroy', $purchase->id)); ?>" method="POST" style="display:inline-block;">
-                                            <?php echo csrf_field(); ?>
-                                            <?php echo method_field('DELETE'); ?>
-                                            <button type="submit" class="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center border-0" onclick="return confirm('Hapus pembelian ini?')" title="Hapus">
-                                                <iconify-icon icon="mingcute:delete-2-line"></iconify-icon>
+                                        <?php if($purchase->status == 'drafted'): ?>
+                                            <a href="<?php echo e(route('purchases.edit', $purchase->id)); ?>" class="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center me-1" title="Ubah">
+                                                <iconify-icon icon="lucide:edit"></iconify-icon>
+                                            </a>
+                                            <button type="button"
+                                                    class="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center me-1"
+                                                    title="Kirim"
+                                                    onclick="openShippingModal(<?php echo e($purchase->id); ?>)">
+                                                <iconify-icon icon="mdi:truck-delivery"></iconify-icon>
                                             </button>
-                                        </form>
+                                            <form action="<?php echo e(route('purchases.destroy', $purchase->id)); ?>" method="POST" style="display:inline-block;">
+                                                <?php echo csrf_field(); ?>
+                                                <?php echo method_field('DELETE'); ?>
+                                                <button type="submit" class="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center border-0" onclick="return confirm('Hapus pembelian ini?')" title="Hapus">
+                                                    <iconify-icon icon="mingcute:delete-2-line"></iconify-icon>
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -89,7 +107,7 @@
 
 <!-- Shipping Modal -->
 <div class="modal fade" id="shippingModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl"> <!-- Ubah dari modal-lg ke modal-xl -->
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Buat Pengiriman</h5>
@@ -139,13 +157,15 @@
                         <table class="table table-bordered">
                             <thead>
                                 <tr>
-                                    <th width="50">
-                                        <input type="checkbox" id="checkAll">
+                                    <th style="width: 50px; min-width: 50px;"> <!-- Tambahkan min-width -->
+                                        <div class="form-check"> <!-- Bungkus checkbox dalam form-check -->
+                                            <input type="checkbox" class="form-check-input" id="checkAll">
+                                        </div>
                                     </th>
                                     <th>Produk</th>
-                                    <th width="120">Qty Pembelian</th>
-                                    <th width="120">Qty Kirim</th>
-                                    <th width="150">Harga</th>
+                                    <th style="width: 120px">Qty Pembelian</th>
+                                    <th style="width: 120px">Qty Kirim</th>
+                                    <th style="width: 150px">Harga</th>
                                 </tr>
                             </thead>
                             <tbody id="purchaseItems">
@@ -169,144 +189,6 @@
         </div>
     </div>
 </div>
-
-<?php $__env->startPush('scripts'); ?>
-<script>
-let purchaseData = null;
-const shippingModal = new bootstrap.Modal(document.getElementById('shippingModal'));
-
-function openShippingModal(purchaseId) {
-    // Reset form
-    document.getElementById('shippingForm').reset();
-    document.getElementById('purchase_id').value = purchaseId;
-
-    // Fetch purchase data
-    fetch(`/purchases/${purchaseId}`)
-        .then(response => response.json())
-        .then(data => {
-            purchaseData = data;
-            renderPurchaseItems(data.items);
-        });
-
-    shippingModal.show();
-}
-
-function renderPurchaseItems(items) {
-    const tbody = document.getElementById('purchaseItems');
-    tbody.innerHTML = items.map((item, index) => `
-        <tr>
-            <td class="text-center">
-                <input type="checkbox" name="items[${index}][selected]" class="item-checkbox"
-                       onchange="updateShippingQty(${index}, this.checked)">
-                <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
-            </td>
-            <td>${item.product.name}</td>
-            <td class="text-center">${item.quantity}</td>
-            <td>
-                <input type="number" name="items[${index}][quantity]" class="form-control shipping-qty"
-                       min="1" max="${item.quantity}" value="${item.quantity}" disabled>
-            </td>
-            <td>
-                <input type="number" name="items[${index}][price]" class="form-control"
-                       value="${item.price}" readonly>
-            </td>
-        </tr>
-    `).join('');
-}
-
-function updateShippingQty(index, checked) {
-    const qtyInput = document.querySelectorAll('.shipping-qty')[index];
-    qtyInput.disabled = !checked;
-}
-
-document.getElementById('checkAll').addEventListener('change', function() {
-    const checkboxes = document.querySelectorAll('.item-checkbox');
-    const qtyInputs = document.querySelectorAll('.shipping-qty');
-
-    checkboxes.forEach((checkbox, index) => {
-        checkbox.checked = this.checked;
-        qtyInputs[index].disabled = !this.checked;
-    });
-});
-
-function submitShipping() {
-    const formData = new FormData(document.getElementById('shippingForm'));
-    const purchaseId = formData.get('purchase_id');
-
-    // Convert FormData to JSON
-    const jsonData = {
-        purchase_id: purchaseId,
-        number_shipping: formData.get('number_shipping'),
-        shipping_date: formData.get('shipping_date'),
-        status: formData.get('status'),
-        note: formData.get('note'),
-        total: calculateTotal(),
-        items: []
-    };
-
-    // Add store_id if user has global access
-    if (formData.get('store_id')) {
-        jsonData.store_id = formData.get('store_id');
-    }
-
-    // Get selected items
-    const items = document.querySelectorAll('.item-checkbox');
-    items.forEach((checkbox, index) => {
-        if (checkbox.checked) {
-            jsonData.items.push({
-                product_id: formData.get(`items[${index}][product_id]`),
-                quantity: formData.get(`items[${index}][quantity]`),
-                price: formData.get(`items[${index}][price]`)
-            });
-        }
-    });
-
-    // Submit data
-    fetch('/shippings', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        },
-        body: JSON.stringify(jsonData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            shippingModal.hide();
-            window.location.reload();
-        } else {
-            alert(data.message || 'Terjadi kesalahan');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Terjadi kesalahan');
-    });
-}
-
-// Add function to calculate total
-function calculateTotal() {
-    let total = 0;
-    document.querySelectorAll('.item-checkbox').forEach((checkbox, index) => {
-        if (checkbox.checked) {
-            const qty = document.querySelectorAll('.shipping-qty')[index].value;
-            const price = document.querySelectorAll('input[name^="items["][name$="[price]"]')[index].value;
-            total += qty * price;
-        }
-    });
-    document.getElementById('total_amount').value = total;
-    return total;
-}
-
-// Add event listeners for quantity changes to update total
-document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('shipping-qty') || e.target.classList.contains('item-checkbox')) {
-        calculateTotal();
-    }
-});
-</script>
-<?php $__env->stopPush(); ?>
 <?php $__env->stopSection(); ?>
 
 <?php echo $__env->make('layout.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH D:\Project\Experiment\pos_app\resources\views/purchases/index.blade.php ENDPATH**/ ?>

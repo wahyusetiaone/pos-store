@@ -8,12 +8,15 @@ use App\Models\ProductImage;
 use App\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use App\Models\Image;
+use Str;
 
 class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with('category', 'images');
+        $query = Product::with(['category', 'images', 'store']);
 
         // Filter by store if user doesn't have global access
         if (!auth()->user()->hasGlobalAccess()) {
@@ -30,7 +33,7 @@ class ProductController extends Controller
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        $products = $query->paginate(15);
+        $products = $query->orderByDesc('id')->paginate(15);
 
         // Get categories based on store access
         $categoryQuery = Category::query();
@@ -69,53 +72,60 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'sku' => 'nullable|string|max:100',
-            'price' => 'required|numeric',
-            'stock' => 'required|integer',
-            'category_id' => 'required|exists:categories,id',
+            'sku' => 'nullable|string|max:255',
             'description' => 'nullable|string',
-            'status' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:4048',
-            'store_id' => auth()->user()->hasGlobalAccess() ? 'required|exists:stores,id' : 'prohibited'
+            'price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'category_id' => 'required|exists:categories,id',
+            'status' => 'required|boolean',
+            'store_id' => auth()->user()->hasGlobalAccess() ? 'required|exists:stores,id' : 'prohibited',
+            'selected_images' => 'nullable|json'
         ]);
 
-        // Set store_id based on user access
-        if (auth()->user()->hasGlobalAccess()) {
-            // Store ID from request for global access users
-            $storeId = $request->store_id;
-        } else {
-            // Current store ID for non-global access users
-            $storeId = auth()->user()->current_store_id;
+        try {
+            DB::beginTransaction();
+
+            // Set store_id based on user access
+            if (!auth()->user()->hasGlobalAccess()) {
+                $validated['store_id'] = auth()->user()->current_store_id;
+            }
+            // Create product
+            $product = Product::create(collect($validated)->except(['selected_images'])->toArray());
+            // Handle selected images from gallery
+            if ($request->selected_images) {
+                $selectedImages = json_decode($request->selected_images, true);
+                foreach ($selectedImages as $imageId) {
+                    $galleryImage = Image::find($imageId);
+
+                    if ($galleryImage) {
+                        // Copy the image file
+                        $extension = pathinfo($galleryImage->path, PATHINFO_EXTENSION);
+                        $newPath = 'products/' . Str::slug($product->name) . '-' . uniqid() . '.' . $extension;
+
+                        Storage::copy('public/' . $galleryImage->path, 'public/' . $newPath);
+
+                        // Create product image record
+                        ProductImage::create([
+                            'product_id' => $product->id,
+                            'image_path' => $newPath,
+                        ]);
+                    }
+                }
+            }
+
+            DB::commit();
+           if ($request->ajax() || ($request->acceptsJson() && $request->isJson() && $request->wantsJson())) {
+                return response()->json(['success' => true, 'data' => $product, 'message' => 'Produk berhasil ditambahkan.']);
+            }
+            return redirect()->route('products.index')->with('success', 'Produk berhasil ditambahkan.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            if ($request->ajax() || ($request->acceptsJson() && $request->isJson() && $request->wantsJson())) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()]);
+            }
+            return back()->withInput()->with('error', 'Gagal menambahkan produk: ' . $e->getMessage());
         }
-
-        // Add store_id to validated data
-        $validated['store_id'] = $storeId;
-
-        // Create product
-        $product = Product::create($validated);
-
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('public/products');
-
-            // Create product image record
-            ProductImage::create([
-                'product_id' => $product->id,
-                'image_path' => str_replace('public/', '', $imagePath),
-                'is_primary' => true
-            ]);
-        }
-
-        // If request is AJAX, return JSON response
-        if ($request->ajax() || $request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Produk berhasil ditambahkan',
-                'product' => $product
-            ]);
-        }
-
-        return redirect()->route('products.index')->with('success', 'Produk berhasil ditambahkan.');
     }
 
     public function show(Product $product)

@@ -17,14 +17,14 @@ class PurchaseController extends Controller
      */
     public function index()
     {
-        $query = Purchase::with('user');
+        $query = Purchase::with(['user', 'store']);
 
         // Filter by store if user doesn't have global access
         if (!auth()->user()->hasGlobalAccess()) {
             $query->where('store_id', auth()->user()->current_store_id);
         }
 
-        $purchases = $query->paginate(15);
+        $purchases = $query->orderByDesc('id')->paginate(15);
         return view('purchases.index', compact('purchases'));
     }
 
@@ -121,7 +121,8 @@ class PurchaseController extends Controller
     public function show(Purchase $purchase)
     {
         if (request()->wantsJson()) {
-            return response()->json($purchase->load(['items.product']));
+            $purchase->load(['items.product']);  // Explicitly load the relationships
+            return response()->json($purchase);
         }
 
         $purchase->load(['user', 'items']);
@@ -143,10 +144,12 @@ class PurchaseController extends Controller
     public function update(Request $request, Purchase $purchase)
     {
         $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'purchase_date' => 'required|date',
-            'supplier' => 'required|string|max:255',
-            'total' => 'required|numeric',
+            'user_id' => 'exists:users,id',
+            'purchase_date' => 'date',
+            'supplier' => 'string|max:255',
+            'status' => 'string|max:255',
+            'shipping_date' => 'date|nullable',
+            'total' => 'numeric',
             'note' => 'nullable|string',
         ]);
         $purchase->update($validated);

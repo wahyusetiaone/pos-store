@@ -19,6 +19,10 @@
                     <table class="table bordered-table mb-0">
                         <thead>
                             <tr>
+                                <th>No</th>
+                                @if(auth()->user()->hasGlobalAccess())
+                                    <th>Nama Toko</th>
+                                @endif
                                 <th>Tanggal</th>
                                 <th>Jenis</th>
                                 <th>Kategori</th>
@@ -30,29 +34,33 @@
                         </thead>
                         <tbody>
                             @foreach($finances as $finance)
-                                <tr>
-                                    <td>{{ $finance->date }}</td>
-                                    <td>{{ ucfirst($finance->type) }}</td>
-                                    <td>{{ $finance->category }}</td>
-                                    <td>Rp {{ number_format($finance->amount, 0, ',', '.') }}</td>
-                                    <td>{{ $finance->description }}</td>
-                                    <td>{{ $finance->user->name ?? '-' }}</td>
-                                    <td class="text-center">
-                                        <a href="{{ route('finances.show', $finance->id) }}" class="w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center me-1" title="Lihat">
-                                            <iconify-icon icon="iconamoon:eye-light"></iconify-icon>
-                                        </a>
-                                        <a href="{{ route('finances.edit', $finance->id) }}" class="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center me-1" title="Ubah">
-                                            <iconify-icon icon="lucide:edit"></iconify-icon>
-                                        </a>
-                                        <form action="{{ route('finances.destroy', $finance->id) }}" method="POST" style="display:inline-block;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center border-0" onclick="return confirm('Hapus transaksi ini?')" title="Hapus">
-                                                <iconify-icon icon="mingcute:delete-2-line"></iconify-icon>
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
+                            <tr>
+                                <td>{{ ($finances->currentPage() - 1) * $finances->perPage() + $loop->iteration }}</td>
+                                @if(auth()->user()->hasGlobalAccess())
+                                    <td>{{ $finance->store->name ?? '-' }}</td>
+                                @endif
+                                <td>{{ $finance->date }}</td>
+                                <td>{{ ucfirst($finance->type) }}</td>
+                                <td>{{ $finance->category }}</td>
+                                <td>Rp {{ number_format($finance->amount, 0, ',', '.') }}</td>
+                                <td>{{ $finance->description }}</td>
+                                <td>{{ $finance->user->name ?? '-' }}</td>
+                                <td class="text-center">
+                                    <a href="{{ route('finances.show', $finance->id) }}" class="w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center me-1" title="Lihat">
+                                        <iconify-icon icon="iconamoon:eye-light"></iconify-icon>
+                                    </a>
+                                    <a href="{{ route('finances.edit', $finance->id) }}" class="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center me-1" title="Ubah">
+                                        <iconify-icon icon="lucide:edit"></iconify-icon>
+                                    </a>
+                                    <form action="{{ route('finances.destroy', $finance->id) }}" method="POST" style="display:inline-block;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center border-0" onclick="return confirm('Hapus transaksi ini?')" title="Hapus">
+                                            <iconify-icon icon="mingcute:delete-2-line"></iconify-icon>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
                             @endforeach
                         </tbody>
                     </table>
@@ -86,4 +94,3 @@
     </div>
 </div>
 @endsection
-

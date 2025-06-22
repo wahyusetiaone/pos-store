@@ -18,6 +18,13 @@ class Sale extends Model
         'note'
     ];
 
+    protected $casts = [
+        'sale_date' => 'datetime',
+        'total' => 'decimal:2',
+        'discount' => 'decimal:2',
+        'paid' => 'decimal:2'
+    ];
+
     public function customer()
     {
         return $this->belongsTo(Customer::class);

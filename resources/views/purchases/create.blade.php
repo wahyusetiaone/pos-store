@@ -2,8 +2,55 @@
 @php
     $title = 'Tambah Pembelian';
     $subTitle = 'Form Transaksi Pembelian';
-    $script = '<script src="' . asset('assets/js/pages/purchase/create.js') . '"></script>';
+    $script = '
+        <script src="' . asset('assets/js/pages/gallery-modal.js') . '"></script>
+        <script src="' . asset('assets/js/pages/purchase/create-product.js') . '"></script>
+        <script src="' . asset('assets/js/pages/purchase/create.js') . '"></script>
+    ';
 @endphp
+
+<style>
+.selected-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.selected-image-item {
+    position: relative;
+    width: 150px;
+}
+
+.selected-image-item img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 0.5rem;
+}
+
+.remove-image {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    color: #dc3545;
+    cursor: pointer;
+}
+
+.remove-image:hover {
+    background: #dc3545;
+    color: white;
+}
+</style>
 
 @section('content')
     <div class="row gy-4">
@@ -205,7 +252,13 @@
 
                         <div class="mb-3">
                             <label class="form-label">Gambar Produk</label>
-                            <input type="file" name="image" class="form-control" accept="image/*">
+                            <input type="hidden" name="selected_images" id="selectedImages">
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-primary" onclick="openGalleryModal('modalGalleryModal')">
+                                    <i class="fas fa-images"></i> Pilih Gambar dari Galeri
+                                </button>
+                            </div>
+                            <div class="selected-images" id="selectedImagesPreview"></div>
                         </div>
                     </form>
                 </div>
@@ -216,5 +269,10 @@
             </div>
         </div>
     </div>
-@endsection
 
+    <x-gallery-modal
+        id="modalGalleryModal"
+        title="Pilih Gambar Produk"
+        :selectMode="true"
+    />
+@endsection

@@ -18,6 +18,10 @@
                     <table class="table bordered-table mb-0">
                         <thead>
                             <tr>
+                                <th>No</th>
+                                <?php if(auth()->user()->hasGlobalAccess()): ?>
+                                    <th>Nama Toko</th>
+                                <?php endif; ?>
                                 <th>Tanggal</th>
                                 <th>Pelanggan</th>
                                 <th>Total</th>
@@ -30,30 +34,34 @@
                         </thead>
                         <tbody>
                             <?php $__currentLoopData = $sales; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sale): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <tr>
-                                    <td><?php echo e($sale->sale_date); ?></td>
-                                    <td><?php echo e($sale->customer->name ?? '-'); ?></td>
-                                    <td>Rp <?php echo e(number_format($sale->total, 0, ',', '.')); ?></td>
-                                    <td>Rp <?php echo e(number_format($sale->discount, 0, ',', '.')); ?></td>
-                                    <td>Rp <?php echo e(number_format($sale->paid, 0, ',', '.')); ?></td>
-                                    <td><?php echo e(ucfirst($sale->payment_method)); ?></td>
-                                    <td><?php echo e($sale->user->name ?? '-'); ?></td>
-                                    <td class="text-center">
-                                        <a href="<?php echo e(route('sales.show', $sale->id)); ?>" class="w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center me-1" title="Lihat">
-                                            <iconify-icon icon="iconamoon:eye-light"></iconify-icon>
-                                        </a>
-                                        <a href="<?php echo e(route('sales.edit', $sale->id)); ?>" class="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center me-1" title="Ubah">
-                                            <iconify-icon icon="lucide:edit"></iconify-icon>
-                                        </a>
-                                        <form action="<?php echo e(route('sales.destroy', $sale->id)); ?>" method="POST" style="display:inline-block;">
-                                            <?php echo csrf_field(); ?>
-                                            <?php echo method_field('DELETE'); ?>
-                                            <button type="submit" class="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center border-0" onclick="return confirm('Hapus penjualan ini?')" title="Hapus">
-                                                <iconify-icon icon="mingcute:delete-2-line"></iconify-icon>
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
+                            <tr>
+                                <td><?php echo e(($sales->currentPage() - 1) * $sales->perPage() + $loop->iteration); ?></td>
+                                <?php if(auth()->user()->hasGlobalAccess()): ?>
+                                    <td><?php echo e($sale->store->name ?? '-'); ?></td>
+                                <?php endif; ?>
+                                <td><?php echo e($sale->sale_date); ?></td>
+                                <td><?php echo e($sale->customer->name ?? '-'); ?></td>
+                                <td>Rp <?php echo e(number_format($sale->total, 0, ',', '.')); ?></td>
+                                <td>Rp <?php echo e(number_format($sale->discount, 0, ',', '.')); ?></td>
+                                <td>Rp <?php echo e(number_format($sale->paid, 0, ',', '.')); ?></td>
+                                <td><?php echo e(ucfirst($sale->payment_method)); ?></td>
+                                <td><?php echo e($sale->user->name ?? '-'); ?></td>
+                                <td class="text-center">
+                                    <a href="<?php echo e(route('sales.show', $sale->id)); ?>" class="w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center me-1" title="Lihat">
+                                        <iconify-icon icon="iconamoon:eye-light"></iconify-icon>
+                                    </a>
+                                    <a href="<?php echo e(route('sales.edit', $sale->id)); ?>" class="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center me-1" title="Ubah">
+                                        <iconify-icon icon="lucide:edit"></iconify-icon>
+                                    </a>
+                                    <form action="<?php echo e(route('sales.destroy', $sale->id)); ?>" method="POST" style="display:inline-block;">
+                                        <?php echo csrf_field(); ?>
+                                        <?php echo method_field('DELETE'); ?>
+                                        <button type="submit" class="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center border-0" onclick="return confirm('Hapus penjualan ini?')" title="Hapus">
+                                            <iconify-icon icon="mingcute:delete-2-line"></iconify-icon>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </tbody>
                     </table>
@@ -87,6 +95,5 @@
     </div>
 </div>
 <?php $__env->stopSection(); ?>
-
 
 <?php echo $__env->make('layout.layout', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH D:\Project\Experiment\pos_app\resources\views/sales/index.blade.php ENDPATH**/ ?>

@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\User;
 use App\Models\SaleItem;
 use App\Models\Store;
+use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 
 class SaleController extends Controller
@@ -17,14 +18,14 @@ class SaleController extends Controller
      */
     public function index()
     {
-        $query = Sale::with(['customer', 'user']);
+        $query = Sale::with(['customer', 'user', 'store']);
 
         // Filter by store if user doesn't have global access
         if (!auth()->user()->hasGlobalAccess()) {
             $query->where('store_id', auth()->user()->current_store_id);
         }
 
-        $sales = $query->paginate(15);
+        $sales = $query->orderByDesc('id')->paginate(15);
         return view('sales.index', compact('sales'));
     }
 
@@ -33,6 +34,7 @@ class SaleController extends Controller
      */
     public function create()
     {
+        $products = [];
         $stores = [];
         if (auth()->user()->hasGlobalAccess()) {
             $stores = Store::where('is_active', true)->get();
@@ -44,7 +46,7 @@ class SaleController extends Controller
         }
         $customers = $customers->get();
 
-        return view('sales.create', compact('stores', 'customers'));
+        return view('sales.create', compact('stores', 'customers', 'products'));
     }
 
     /**
@@ -83,9 +85,9 @@ class SaleController extends Controller
                 'store_id' => $storeId,
                 'customer_id' => $customer ? $customer->id : null,
                 'user_id' => auth()->id(),
-                'sale_date' => now(),
+                'sale_date' => now(), // Using Carbon now() instance
                 'total' => $request->total,
-                'discount' => $request->discount,
+                'discount' => $request->discount ?? 0,
                 'paid' => $request->paid,
                 'payment_method' => $request->payment_method,
                 'note' => $request->note,
@@ -99,8 +101,14 @@ class SaleController extends Controller
                     'quantity' => $item['quantity'],
                     'price' => $item['price'],
                     'discount' => $item['discount'] ?? 0,
-                    'subtotal' => $item['quantity'] * $item['price'],
+                    'subtotal' => ($item['quantity'] * $item['price']) - ($item['discount'] ?? 0),
                 ]);
+
+                // Update product stock
+                $product = Product::find($item['id']);
+                if ($product) {
+                    $product->decrement('stock', $item['quantity']);
+                }
             }
 
             DB::commit();

@@ -14,14 +14,14 @@ class FinanceController extends Controller
      */
     public function index()
     {
-        $query = Finance::with('user');
+        $query = Finance::with(['user', 'store']);
 
         // Filter by store if user doesn't have global access
         if (!auth()->user()->hasGlobalAccess()) {
             $query->where('store_id', auth()->user()->current_store_id);
         }
 
-        $finances = $query->paginate(15);
+        $finances = $query->orderByDesc('id')->paginate(15);
         return view('finances.index', compact('finances'));
     }
 

@@ -38,40 +38,50 @@
                     <table class="table bordered-table mb-0">
                         <thead>
                             <tr>
-                                <th>Kode</th>
-                                <th>Nama</th>
+                                <th>No</th>
+                                @if(auth()->user()->hasGlobalAccess())
+                                    <th>Nama Toko</th>
+                                @endif
+                                <th>SKU</th>
+                                <th>Nama Produk</th>
                                 <th>Kategori</th>
+                                <th>Barcode</th>
                                 <th>Harga</th>
                                 <th>Stok</th>
-                                <th>Status</th>
                                 <th class="text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($products as $product)
-                                <tr>
-                                    <td>{{ $product->sku }}</td>
-                                    <td>{{ $product->name }}</td>
-                                    <td>{{ $product->category->name ?? '-' }}</td>
-                                    <td>Rp {{ number_format($product->price, 0, ',', '.') }}</td>
-                                    <td>{{ $product->stock }}</td>
-                                    <td>{{ $product->status ? 'Aktif' : 'Tidak Aktif' }}</td>
-                                    <td class="text-center">
-                                        <a href="{{ route('products.show', $product->id) }}" class="w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center me-1" title="Lihat">
-                                            <iconify-icon icon="iconamoon:eye-light"></iconify-icon>
-                                        </a>
-                                        <a href="{{ route('products.edit', $product->id) }}" class="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center me-1" title="Ubah">
-                                            <iconify-icon icon="lucide:edit"></iconify-icon>
-                                        </a>
-                                        <form action="{{ route('products.destroy', $product->id) }}" method="POST" style="display:inline-block;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center border-0" onclick="return confirm('Hapus produk ini?')" title="Hapus">
-                                                <iconify-icon icon="mingcute:delete-2-line"></iconify-icon>
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
+                            <tr>
+                                <td>{{ ($products->currentPage() - 1) * $products->perPage() + $loop->iteration }}</td>
+                                @if(auth()->user()->hasGlobalAccess())
+                                    <td>{{ $product->store->name ?? '-' }}</td>
+                                @endif
+                                <td>{{ $product->sku }}</td>
+                                <td>{{ $product->name }}</td>
+                                <td>{{ $product->category->name ?? '-' }}</td>
+                                <td>
+                                    <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($product->sku, 'C128', 1.2, 40) }}" alt="Barcode" style="max-width:120px; max-height:40px;">
+                                </td>
+                                <td>Rp {{ number_format($product->price, 0, ',', '.') }}</td>
+                                <td>{{ $product->stock }}</td>
+                                <td class="text-center">
+                                    <a href="{{ route('products.show', $product->id) }}" class="w-32-px h-32-px bg-primary-light text-primary-600 rounded-circle d-inline-flex align-items-center justify-content-center me-1" title="Lihat">
+                                        <iconify-icon icon="iconamoon:eye-light"></iconify-icon>
+                                    </a>
+                                    <a href="{{ route('products.edit', $product->id) }}" class="w-32-px h-32-px bg-success-focus text-success-main rounded-circle d-inline-flex align-items-center justify-content-center me-1" title="Ubah">
+                                        <iconify-icon icon="lucide:edit"></iconify-icon>
+                                    </a>
+                                    <form action="{{ route('products.destroy', $product->id) }}" method="POST" style="display:inline-block;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="w-32-px h-32-px bg-danger-focus text-danger-main rounded-circle d-inline-flex align-items-center justify-content-center border-0" onclick="return confirm('Hapus produk ini?')" title="Hapus">
+                                            <iconify-icon icon="mingcute:delete-2-line"></iconify-icon>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
                             @endforeach
                         </tbody>
                     </table>

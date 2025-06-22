@@ -58,13 +58,16 @@
             </li>
             @endif
 
+            @if(auth()->user()->role === 'owner' || auth()->user()->role === 'purchasing')
+                <li>
+                    <a href="{{ route('purchases.index') }}">
+                        <iconify-icon icon="mdi:truck-outline" class="menu-icon"></iconify-icon>
+                        <span>Pembelian</span>
+                    </a>
+                </li>
+            @endif
+
             @if(auth()->user()->role === 'owner' || auth()->user()->role === 'store_admin' || auth()->user()->role === 'purchasing')
-            <li>
-                <a href="{{ route('purchases.index') }}">
-                    <iconify-icon icon="mdi:truck-outline" class="menu-icon"></iconify-icon>
-                    <span>Pembelian</span>
-                </a>
-            </li>
             <li>
                 <a href="{{ route('shippings.index') }}">
                     <iconify-icon icon="mdi:truck-delivery-outline" class="menu-icon"></iconify-icon>
@@ -78,6 +81,13 @@
                 </a>
             </li>
             @endif
+
+            <li>
+                <a href="{{ route('gallery.index') }}">
+                    <iconify-icon icon="mdi:image-multiple" class="menu-icon"></iconify-icon>
+                    <span>Galeri</span>
+                </a>
+            </li>
 
             @if(auth()->user()->role === 'owner' || auth()->user()->role === 'purchasing')
             <li>
