@@ -14,6 +14,7 @@ class Product extends Model
         'name',
         'sku',
         'price',
+        'buy_price',
         'stock',
         'description',
         'status'
@@ -32,5 +33,10 @@ class Product extends Model
     public function store()
     {
         return $this->belongsTo(Store::class);
+    }
+
+    public function saleItems()
+    {
+        return $this->hasMany(SaleItem::class);
     }
 }

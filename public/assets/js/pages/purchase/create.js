@@ -195,6 +195,39 @@ $(document).ready(function() {
             alert('Terjadi kesalahan saat menyimpan pembelian');
         });
     });
+
+    // Handle pre-selected store and product
+    const urlParams = new URLSearchParams(window.location.search);
+    const preSelectedStoreId = urlParams.get('store_id');
+    const preSelectedProductId = urlParams.get('product_id');
+
+    if (preSelectedStoreId) {
+        const storeSelect = document.getElementById('store_id');
+        if (storeSelect) {
+            storeSelect.value = preSelectedStoreId;
+            // Trigger change event to load categories if needed
+            storeSelect.dispatchEvent(new Event('change'));
+        }
+    }
+
+    if (preSelectedProductId) {
+        const productSelect = document.getElementById('product_select');
+        if (productSelect) {
+            productSelect.value = preSelectedProductId;
+            // Add the product to the table automatically
+            const selectedOption = productSelect.options[productSelect.selectedIndex];
+            const productName = selectedOption.getAttribute('data-name');
+            const productPrice = selectedOption.getAttribute('data-price');
+
+            // Set default values
+            document.getElementById('qty_input').value = '1';
+            document.getElementById('price_input').value = productPrice;
+            document.getElementById('buy_price_input').value = productPrice;
+
+            // Click the add button automatically
+            document.getElementById('add_item').click();
+        }
+    }
 });
 
 // Global function for remove item (needs to be global for onclick handler)

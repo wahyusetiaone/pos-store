@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Category extends Model
 {
@@ -11,6 +12,11 @@ class Category extends Model
         'name',
         'description'
     ];
+
+    public function setNameAttribute($value)
+    {
+        $this->attributes['name'] = Str::lower($value);
+    }
 
     public function products()
     {

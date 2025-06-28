@@ -50,6 +50,11 @@ class User extends Authenticatable
         ];
     }
 
+    public function hasRole($role)
+    {
+        return $this->role === $role;
+    }
+
     public function currentStore()
     {
         return $this->belongsTo(Store::class, 'current_store_id');

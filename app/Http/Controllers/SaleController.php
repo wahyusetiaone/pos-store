@@ -10,23 +10,55 @@ use App\Models\SaleItem;
 use App\Models\Store;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
+use App\Exports\SaleExport;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Str;
 
 class SaleController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $query = Sale::with(['customer', 'user', 'store']);
 
-        // Filter by store if user doesn't have global access
-        if (!auth()->user()->hasGlobalAccess()) {
+        // Filter by store
+        if (auth()->user()->hasGlobalAccess()) {
+            if ($request->filled('store_id')) {
+                $query->where('store_id', $request->store_id);
+            }
+            // Get stores for filter dropdown
+            $stores = Store::where('is_active', true)->get();
+        } else {
             $query->where('store_id', auth()->user()->current_store_id);
+            $stores = collect(); // empty collection for non-global users
         }
 
-        $sales = $query->orderByDesc('id')->paginate(15);
-        return view('sales.index', compact('sales'));
+        // Apply date filters
+        switch ($request->filter) {
+            case 'today':
+                $query->whereDate('sale_date', now());
+                break;
+            case 'month':
+                $query->whereYear('sale_date', now()->year)
+                      ->whereMonth('sale_date', now()->month);
+                break;
+            case 'year':
+                $query->whereYear('sale_date', now()->year);
+                break;
+            default:
+                if ($request->filled(['start_date', 'end_date'])) {
+                    $query->whereBetween('sale_date', [
+                        $request->start_date . ' 00:00:00',
+                        $request->end_date . ' 23:59:59'
+                    ]);
+                }
+                break;
+        }
+
+        $sales = $query->orderByDesc('id')->paginate(15)->withQueryString();
+        return view('sales.index', compact('sales', 'stores'));
     }
 
     /**
@@ -88,6 +120,7 @@ class SaleController extends Controller
                 'sale_date' => now(), // Using Carbon now() instance
                 'total' => $request->total,
                 'discount' => $request->discount ?? 0,
+                'order_type' => $request->order_type,
                 'paid' => $request->paid,
                 'payment_method' => $request->payment_method,
                 'note' => $request->note,
@@ -157,6 +190,7 @@ class SaleController extends Controller
             'sale_date' => 'required|date',
             'total' => 'required|numeric',
             'discount' => 'nullable|numeric',
+            'order_type' => 'required|string',
             'paid' => 'required|numeric',
             'payment_method' => 'required|string',
             'note' => 'nullable|string',
@@ -172,5 +206,62 @@ class SaleController extends Controller
     {
         $sale->delete();
         return redirect()->route('sales.index')->with('success', 'Penjualan berhasil dihapus.');
+    }
+
+    /**
+     * Export sales to Excel
+     */
+    public function export(Request $request)
+    {
+        $query = Sale::with(['customer', 'user', 'store', 'items.product']);
+
+        // Filter by store
+        if (auth()->user()->hasGlobalAccess()) {
+            if ($request->filled('store_id')) {
+                $query->where('store_id', $request->store_id);
+                $storeName = Store::find($request->store_id)->name;
+                $storePrefix = Str::slug($storeName) . '_';
+            } else {
+                $storePrefix = 'semua_toko_';
+            }
+        } else {
+            $query->where('store_id', auth()->user()->current_store_id);
+            $storePrefix = '';
+        }
+
+        // Apply date filters
+        switch ($request->filter) {
+            case 'today':
+                $query->whereDate('sale_date', now());
+                $filename = $storePrefix . 'penjualan_hari_ini_' . now()->format('Y-m-d');
+                break;
+            case 'month':
+                $query->whereYear('sale_date', now()->year)
+                      ->whereMonth('sale_date', now()->month);
+                $filename = $storePrefix . 'penjualan_bulan_' . now()->format('Y-m');
+                break;
+            case 'year':
+                $query->whereYear('sale_date', now()->year);
+                $filename = $storePrefix . 'penjualan_tahun_' . now()->format('Y');
+                break;
+            default:
+                if ($request->filled(['start_date', 'end_date'])) {
+                    $query->whereBetween('sale_date', [
+                        $request->start_date . ' 00:00:00',
+                        $request->end_date . ' 23:59:59'
+                    ]);
+                    $filename = $storePrefix . 'penjualan_' . $request->start_date . '_' . $request->end_date;
+                } else {
+                    $filename = $storePrefix . 'semua_penjualan';
+                }
+                break;
+        }
+
+        $sales = $query->orderByDesc('sale_date')->get();
+
+        return Excel::download(
+            new SaleExport($sales),
+            $filename . '.xlsx'
+        );
     }
 }

@@ -31,21 +31,24 @@ class PurchaseController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        $stores = [];
-        $categories = [];
-        if (auth()->user()->hasGlobalAccess()) {
-            $stores = Store::where('is_active', true)->get();
+        $categories = auth()->user()->hasGlobalAccess() ? [] : auth()->user()->current_store->categories;
+        $stores = auth()->user()->hasGlobalAccess() ? Store::where('is_active', true)->get() : [];
+        $products = Product::when(!auth()->user()->hasGlobalAccess(), function($query) {
+            return $query->where('store_id', auth()->user()->current_store_id);
+        })->get();
+
+        // Handle pre-filled data from product detail page
+        $preSelectedStore = null;
+        $preSelectedProduct = null;
+
+        if ($request->has('store_id') && $request->has('product_id')) {
+            $preSelectedStore = Store::find($request->store_id);
+            $preSelectedProduct = Product::find($request->product_id);
         }
 
-        $products = Product::query();
-        if (!auth()->user()->hasGlobalAccess()) {
-            $products->where('store_id', auth()->user()->current_store_id);
-        }
-        $products = $products->get();
-
-        return view('purchases.create', compact('stores', 'products', 'categories'));
+        return view('purchases.create', compact('stores', 'products', 'categories', 'preSelectedStore', 'preSelectedProduct'));
     }
 
     /**

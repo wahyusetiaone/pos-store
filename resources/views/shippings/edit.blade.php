@@ -69,9 +69,12 @@
                                 <thead>
                                 <tr>
                                     <th>Produk</th>
+                                    <th>SKU</th>
+                                    <th>Barcode</th>
                                     <th width="100">Qty Kirim</th>
                                     <th width="100">Qty Terima</th>
                                     <th width="200">Note</th>
+                                    <th width="50">Aksi</th>
                                 </tr>
                                 </thead>
                                 <tbody id="items_table">
@@ -81,6 +84,10 @@
                                             <input type="text" name="display_items[{{ $loop->index }}][product_id]" class="form-control" value="{{ $item->product->name }}" disabled>
                                             <input type="hidden" name="items[{{ $loop->index }}][product_id]" class="form-control" value="{{ $item->product_id }}">
                                         </td>
+                                        <td>{{ $item->product->sku }}</td>
+                                        <td>
+                                            <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($item->product->sku, 'C128', 1.2, 40) }}" alt="Barcode" style="max-width:120px; max-height:40px;">
+                                        </td>
                                         <td>
                                             <input type="number" name="items[{{ $loop->index }}][qty_sent]" class="form-control" value="{{ $item->qty_sent ?? $item->quantity }}" min="0" disabled>
                                         </td>
@@ -89,6 +96,14 @@
                                         </td>
                                         <td>
                                             <input type="text" name="items[{{ $loop->index }}][note]" class="form-control" value="{{ $item->note ?? '' }}" placeholder="Catatan">
+                                        </td>
+                                        <td class="text-center">
+                                            <a href="{{ route('shippings.barcode', ['shipping' => $shipping->id, 'item' => $item->id]) }}"
+                                               class="w-32-px h-32-px bg-info-focus text-info-main rounded-circle d-inline-flex align-items-center justify-content-center"
+                                               title="Print Barcode"
+                                               target="_blank">
+                                                <iconify-icon icon="mdi:barcode"></iconify-icon>
+                                            </a>
                                         </td>
                                     </tr>
                                 @endforeach

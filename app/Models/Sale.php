@@ -15,6 +15,7 @@ class Sale extends Model
         'discount',
         'paid',
         'payment_method',
+        'order_type',
         'note'
     ];
 

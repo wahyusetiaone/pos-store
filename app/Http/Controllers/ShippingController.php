@@ -10,6 +10,7 @@ use App\Models\Purchase;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ShippingController extends Controller
 {
@@ -260,5 +261,20 @@ class ShippingController extends Controller
         $pdf = Pdf::loadView('shippings.surat-jalan', compact('shipping'))
             ->setPaper('a5', 'landscape');
         return $pdf->stream('Surat-Jalan-' . $shipping->number_shipping . '.pdf');
+    }
+
+    /**
+     * Generate barcode PDF for shipping item
+     */
+    public function generateBarcodePdf(Shipping $shipping, ShippingItem $item)
+    {
+        $pdf = PDF::loadView('shippings.barcode-pdf', [
+            'shipping' => $shipping,
+            'item' => $item,
+            'product' => $item->product,
+        ]);
+
+        $filename = 'barcode-' . Str::slug($item->product->name) . '-' . $shipping->number_shipping . '.pdf';
+        return $pdf->download($filename);
     }
 }

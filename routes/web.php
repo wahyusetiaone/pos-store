@@ -16,6 +16,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\GalleryController;
+use App\Http\Controllers\ShopController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
@@ -49,6 +50,7 @@ Route::middleware(['auth', 'store.access'])->group(function () {
     Route::resource('categories', CategoryController::class);
     Route::resource('products', ProductController::class);
     Route::resource('customers', CustomerController::class);
+    Route::get('/sales/export', [SaleController::class, 'export'])->name('sales.export');
     Route::resource('sales', SaleController::class);
     Route::resource('purchases', PurchaseController::class);
     Route::patch('purchases/{purchase}/status', [PurchaseController::class, 'updateStatus'])->name('purchases.update-status');
@@ -62,8 +64,11 @@ Route::middleware(['auth', 'store.access'])->group(function () {
     Route::post('/shippings/{shipping}/accepter', [ShippingController::class, 'accepter'])->name('shippings.accepter')->where('shipping', '[0-9]+');
     Route::get('/shippings/{shipping}/surat-jalan', [ShippingController::class, 'suratJalan'])
         ->name('shippings.surat-jalan')->where('shipping', '[0-9]+');
+    Route::get('/shippings/{shipping}/items/{item}/barcode', [ShippingController::class, 'generateBarcodePdf'])->name('shippings.barcode')->where('shipping', '[0-9]+');
     Route::resource('users', UsersController::class);
     Route::resource('finances', FinanceController::class);
+    Route::get('/finances/{finance}/export', [FinanceController::class, 'export'])->name('finances.export');
+    Route::get('/export-finances/export-selected', [FinanceController::class, 'exportSelected'])->name('finances.export-selected');
     Route::resource('stores', StoreController::class);
 
     Route::get('/gallery/images', [GalleryController::class, 'images'])->name('gallery.images');
@@ -119,6 +124,11 @@ Route::middleware(['auth', 'store.access'])->group(function () {
     Route::get('/maintenance', [HomeController::class, 'maintenance'])->name('maintenance');
 
     // Invoice routes
+    Route::get('/blog/add', [\App\Http\Controllers\BlogController::class, 'addBlog'])->name('addBlog');
+    Route::get('/blog', [\App\Http\Controllers\BlogController::class, 'blog'])->name('blog');
+    Route::get('/blog/details', [\App\Http\Controllers\BlogController::class, 'blogDetails'])->name('blogDetails');
+
+    // Invoice routes
     Route::get('/invoice/add', [InvoiceController::class, 'invoiceAdd'])->name('invoice.add');
     Route::get('/invoice/edit', [InvoiceController::class, 'invoiceEdit'])->name('invoice.edit');
     Route::get('/invoice/list', [InvoiceController::class, 'invoiceList'])->name('invoice.list');
@@ -152,6 +162,20 @@ Route::middleware(['auth', 'store.access'])->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/store/select', [StoreController::class, 'select'])->name('store.select');
     Route::post('/store/switch', [StoreController::class, 'switch'])->name('store.switch');
+
+    // Product routes
+    Route::get('download-template-products', [ProductController::class, 'downloadTemplate'])->name('products.template');
+    Route::get('/products/{product}/barcode', [ProductController::class, 'generateBarcodePdf'])->name('products.barcode');
+    Route::get('/download/barcode/multiple', [ProductController::class, 'generateMultipleBarcodePdf'])->name('products.barcode.multiple');
+    Route::post('/products/import', [ProductController::class, 'import'])->name('products.import');
+
+    Route::get('/cod', [App\Http\Controllers\CodController::class, 'index'])->name('cod.index');
+
 });
+
+// Shop routes
+Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
+Route::get('/shop/{product}', [ShopController::class, 'show'])->name('shop.show');
+
 
 require __DIR__.'/auth.php';

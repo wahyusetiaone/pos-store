@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use App\Models\Image;
 use Str;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\ProductImport;
+use App\Exports\ProductExport;
+use PDF;
 
 class ProductController extends Controller
 {
@@ -33,7 +37,28 @@ class ProductController extends Controller
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        $products = $query->orderByDesc('id')->paginate(15);
+        // Sort by stock
+        $sort = $request->get('sort', 'stock_asc');
+        if ($sort === 'stock_desc') {
+            $query->orderBy('stock', 'desc');
+        } else {
+            $query->orderBy('stock', 'asc');
+        }
+
+        // Handle pagination
+        $perPage = $request->get('per_page', 15);
+        if ($perPage === 'all') {
+            $products = $query->get();
+            // Convert collection to LengthAwarePaginator to maintain consistency
+            $products = new \Illuminate\Pagination\LengthAwarePaginator(
+                $products,
+                $products->count(),
+                $products->count(),
+                1
+            );
+        } else {
+            $products = $query->paginate($perPage)->withQueryString();
+        }
 
         // Get categories based on store access
         $categoryQuery = Category::query();
@@ -42,6 +67,12 @@ class ProductController extends Controller
         }
         $categories = $categoryQuery->get();
 
+        $stores = [];
+
+        if (auth()->user()->hasGlobalAccess()) {
+            $stores = Store::where('is_active', true)->get();
+        }
+
         if ($request->ajax() || ($request->acceptsJson() && $request->isJson())) {
             return response()->json([
                 'products' => $products,
@@ -49,7 +80,7 @@ class ProductController extends Controller
             ]);
         }
 
-        return view('products.index', compact('products', 'categories'));
+        return view('products.index', compact('products', 'categories', 'stores'));
     }
 
     public function create()
@@ -188,4 +219,100 @@ class ProductController extends Controller
         $product->delete();
         return redirect()->route('products.index')->with('success', 'Product deleted successfully.');
     }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls',
+            'store_id' => 'required|exists:stores,id'
+        ]);
+
+        try {
+            Excel::import(new ProductImport($request->store_id), $request->file('file'));
+
+            return redirect()->route('products.index')->with('success', 'Produk berhasil diimpor.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mengimpor produk: ' . $e->getMessage());
+        }
+    }
+
+    public function downloadTemplate()
+    {
+        $headers = [
+            'category',
+            'name',
+            'sku',
+            'buy_price',
+            'price',
+            'stock',
+            'description',
+            'status'
+        ];
+
+        // Add example data
+        $data = [
+            [
+                'category' => 'elektronik',
+                'name' => 'Contoh Produk',
+                'sku' => 'SKU001',
+                'buy_price' => '90000',
+                'price' => '100000',
+                'stock' => '10',
+                'description' => 'Deskripsi produk',
+                'status' => '1'
+            ]
+        ];
+
+        return Excel::download(new ProductExport($headers, $data), 'template_import_produk.xlsx');
+    }
+
+    public function generateBarcodePdf(Product $product)
+    {
+        $barcodes = array_fill(0, $product->stock, [
+            'sku' => $product->sku,
+            'name' => $product->name,
+            'price' => $product->price
+        ]);
+
+        $pdf = PDF::loadView('products.barcode-pdf', [
+            'barcodes' => $barcodes,
+            'product' => $product
+        ]);
+
+        return $pdf->download('barcode-' . Str::slug($product->name) . '.pdf');
+    }
+
+    public function generateMultipleBarcodePdf(Request $request)
+    {
+        $productIds = explode(',', $request->product_ids);
+        $products = Product::whereIn('id', $productIds)->get();
+
+        $allBarcodes = [];
+        foreach ($products as $product) {
+            // Skip products with 0 or negative stock
+            if ($product->stock <= 0) {
+                continue;
+            }
+
+            // Generate array of barcode data based on product quantity
+            $productBarcodes = array_fill(0, $product->stock, [
+                'sku' => $product->sku,
+                'name' => $product->name,
+                'price' => $product->price
+            ]);
+            $allBarcodes = array_merge($allBarcodes, $productBarcodes);
+        }
+
+        // If no valid barcodes, redirect back with message
+        if (empty($allBarcodes)) {
+            return back()->with('error', 'Tidak ada produk dengan stock yang valid untuk dicetak');
+        }
+
+        $pdf = \PDF::loadView('products.multiple-barcode', [
+            'barcodes' => $allBarcodes
+        ]);
+
+        return $pdf->download('barcodes.pdf');
+    }
 }
+

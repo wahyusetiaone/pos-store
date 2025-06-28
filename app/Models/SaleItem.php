@@ -13,7 +13,19 @@ class SaleItem extends Model
         'price',
         'discount',
         'subtotal',
+        'unit_profit_loss'
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($saleItem) {
+            $product = $saleItem->product;
+            $profit = ($saleItem->price - $product->buy_price) * $saleItem->quantity - $saleItem->discount;
+            $saleItem->unit_profit_loss = $profit;
+        });
+    }
 
     public function sale()
     {

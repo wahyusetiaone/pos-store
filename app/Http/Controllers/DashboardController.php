@@ -194,8 +194,20 @@ class DashboardController extends Controller
 
     public function pos()
     {
-        $products = Product::with(['category', 'images'])->get();
-        $categories = Category::all();
+        // Base queries
+        $productsQuery = Product::with(['category', 'images']);
+        $categoriesQuery = Category::query();
+
+        // Filter by store if user doesn't have global access
+        if (!auth()->user()->hasGlobalAccess()) {
+            $storeId = auth()->user()->current_store_id;
+            $productsQuery->where('store_id', $storeId);
+            $categoriesQuery->where('store_id', $storeId);
+        }
+
+        $products = $productsQuery->get();
+        $categories = $categoriesQuery->get();
+
         return view('dashboard.pos', compact('products', 'categories'));
     }
 }
