@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Image;
+use App\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -26,6 +27,12 @@ class GalleryController extends Controller
 
         $images = $query->latest()->get();
 
+        // Get stores if user has global access
+        $stores = null;
+        if (auth()->user()->hasGlobalAccess()) {
+            $stores = Store::where('is_active', true)->get();
+        }
+
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
@@ -33,7 +40,7 @@ class GalleryController extends Controller
             ]);
         }
 
-        return view('gallery.index', compact('images'));
+        return view('gallery.index', compact('images', 'stores'));
     }
 
     public function store(Request $request)
@@ -82,15 +89,20 @@ class GalleryController extends Controller
         }
     }
 
-    public function destroy(Image $image)
+    public function destroy($id)
     {
         try {
+
+            $image = Image::find($id);
+            if (!$image) {
+                return response()->json(['success' => false, 'message' => 'Image not found'], 404);
+            }
+
             // Check if user has access to this image
             if (!auth()->user()->hasGlobalAccess() &&
                 $image->store_id !== auth()->user()->current_store_id) {
                 throw new \Exception('Unauthorized access');
             }
-
             // Delete file from storage
             Storage::disk('public')->delete($image->path);
 

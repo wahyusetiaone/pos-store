@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Store;
 use App\Models\User;
+use App\Models\Banner;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -41,12 +42,17 @@ class StoreController extends Controller
             'address' => 'nullable|string',
             'description' => 'nullable|string',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'img_logo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'is_active' => 'boolean'
         ]);
 
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('stores/logos', 'public');
             $validated['logo'] = $path;
+        }
+        if ($request->hasFile('img_logo')) {
+            $imgLogoPath = $request->file('img_logo')->store('stores/img_logos', 'public');
+            $validated['img_logo'] = $imgLogoPath;
         }
 
         $validated['is_active'] = $request->has('is_active');
@@ -89,6 +95,7 @@ class StoreController extends Controller
             'address' => 'nullable|string',
             'description' => 'nullable|string',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'img_logo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'is_active' => 'boolean'
         ]);
 
@@ -98,6 +105,13 @@ class StoreController extends Controller
             }
             $path = $request->file('logo')->store('stores/logos', 'public');
             $validated['logo'] = $path;
+        }
+        if ($request->hasFile('img_logo')) {
+            if ($store->img_logo) {
+                Storage::disk('public')->delete($store->img_logo);
+            }
+            $imgLogoPath = $request->file('img_logo')->store('stores/img_logos', 'public');
+            $validated['img_logo'] = $imgLogoPath;
         }
 
         $validated['is_active'] = $request->has('is_active');
@@ -116,6 +130,9 @@ class StoreController extends Controller
 
         if ($store->logo) {
             Storage::disk('public')->delete($store->logo);
+        }
+        if ($store->img_logo) {
+            Storage::disk('public')->delete($store->img_logo);
         }
 
         $store->delete();
@@ -236,5 +253,33 @@ class StoreController extends Controller
         session(['current_store_id' => $storeId]);
 
         return redirect()->route('index')->with('success', 'Berhasil beralih toko.');
+    }
+
+    // Tambah banner toko
+    public function storeBanner(Request $request, Store $store)
+    {
+        if (!Auth::user()->hasGlobalAccess()) {
+            abort(403, 'Unauthorized action.');
+        }
+        $request->validate([
+            'banner' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+        $path = $request->file('banner')->store('stores/banners', 'public');
+        $store->banners()->create(['path' => $path]);
+        return redirect()->route('stores.edit', $store->id)->with('success', 'Banner berhasil ditambahkan.');
+    }
+
+    // Hapus banner toko
+    public function destroyBanner(Store $store, Banner $banner)
+    {
+        if (!Auth::user()->hasGlobalAccess()) {
+            abort(403, 'Unauthorized action.');
+        }
+        if ($banner->store_id !== $store->id) {
+            abort(404);
+        }
+        \Storage::disk('public')->delete($banner->path);
+        $banner->delete();
+        return redirect()->route('stores.edit', $store->id)->with('success', 'Banner berhasil dihapus.');
     }
 }

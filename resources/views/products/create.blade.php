@@ -98,6 +98,17 @@
                                 @enderror
                             </div>
                         </div>
+                        @if(auth()->user()->hasGlobalAccess())
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Harga Beli</label>
+                                <input type="number" name="buy_price" class="form-control @error('buy_price') is-invalid @enderror" value="{{ old('buy_price') }}">
+                                @error('buy_price')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        @endif
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">SKU</label>

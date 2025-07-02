@@ -108,6 +108,17 @@
                                 <input type="text" class="form-control" value="{{ $product->category->name ?? '-' }}" readonly>
                             </div>
                         </div>
+                        @if(auth()->user()->hasGlobalAccess())
+                        <div class="col-md-6">
+                            <label class="form-label">Harga Beli</label>
+                            <div class="icon-field">
+                                <span class="icon">
+                                    <iconify-icon icon="mdi:cash"></iconify-icon>
+                                </span>
+                                <input type="text" class="form-control" value="Rp {{ number_format($product->buy_price, 0, ',', '.') }}" readonly>
+                            </div>
+                        </div>
+                        @endif
                         <div class="col-md-6">
                             <label class="form-label">Harga</label>
                             <div class="icon-field">

@@ -84,6 +84,13 @@
                                 @enderror
                             </div>
                             <div class="col-md-6">
+                                <label class="form-label">Foto Logo (img_logo)</label>
+                                <input type="file" name="img_logo" class="form-control @error('img_logo') is-invalid @enderror" accept="image/*">
+                                @error('img_logo')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
                                 <label class="form-label">Status</label>
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" name="is_active" value="1" checked>

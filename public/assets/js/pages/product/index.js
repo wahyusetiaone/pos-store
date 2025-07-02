@@ -42,3 +42,37 @@ document.addEventListener('DOMContentLoaded', function() {
     updateDownloadButton();
 });
 
+document.addEventListener('DOMContentLoaded', function() {
+    const rangeAll = document.getElementById('range_all');
+    const rangeSelected = document.getElementById('range_selected');
+    const selectedProductSection = document.getElementById('selectedProductSection');
+    const form = document.getElementById('catalogueDownloadForm');
+    const selectedProductIds = document.getElementById('selectedProductIds');
+
+    function updateModalInputs() {
+        if (rangeSelected.checked) {
+            selectedProductSection.style.display = '';
+        } else {
+            selectedProductSection.style.display = 'none';
+        }
+    }
+
+    rangeAll.addEventListener('change', updateModalInputs);
+    rangeSelected.addEventListener('change', updateModalInputs);
+    updateModalInputs();
+
+    form.addEventListener('submit', function(e) {
+        if (rangeSelected.checked) {
+            // collect checked product ids
+            let ids = Array.from(document.querySelectorAll('.product-checkbox:checked')).map(cb => cb.value);
+            selectedProductIds.value = ids.join(',');
+            if (ids.length === 0) {
+                alert('Pilih minimal satu produk!');
+                e.preventDefault();
+            }
+        } else {
+            // for all, send a marker for all
+            selectedProductIds.value = 'all';
+        }
+    });
+});

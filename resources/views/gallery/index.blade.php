@@ -97,18 +97,30 @@
                                 <input type="text" name="name" class="form-control" required>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        @if(auth()->user()->hasGlobalAccess() && isset($stores))
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Pilih Toko</label>
+                                <select name="store_id" class="form-control" required>
+                                    <option value="">-- Pilih Toko --</option>
+                                    @foreach($stores as $store)
+                                        <option value="{{ $store->id }}">{{ $store->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        @endif
+                        <div class="col-md-4 @if(auth()->user()->hasGlobalAccess() && isset($stores)) col-md-4 @endif">
                             <div class="mb-3">
                                 <label class="form-label">File Gambar</label>
                                 <input type="file" name="image" class="form-control" accept="image/*" required>
                                 <small class="text-muted">Format: JPG, JPEG, PNG, GIF. Maksimal 2MB</small>
                             </div>
                         </div>
-                        <div class="col-md-2">
-                            <div class="mb-3">
-                                <label class="form-label">&nbsp;</label>
-                                <button type="submit" class="btn btn-primary w-100">Upload</button>
-                            </div>
+                    </div>
+                    <div class="row">
+                        <div class="mb-3">
+                            <button type="submit" class="btn btn-primary w-100">Upload</button>
                         </div>
                     </div>
                 </form>

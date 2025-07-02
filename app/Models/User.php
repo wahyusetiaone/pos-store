@@ -24,7 +24,8 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'current_store_id'
+        'current_store_id',
+        'img_picture'
     ];
 
     /**

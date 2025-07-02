@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CatalogueController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
@@ -79,6 +80,10 @@ Route::middleware(['auth', 'store.access'])->group(function () {
     Route::get('/stores/{store}/users', [StoreController::class, 'users'])->name('stores.users');
     Route::post('/stores/{store}/users', [StoreController::class, 'assignUser'])->name('stores.assign-user');
     Route::delete('/stores/{store}/users/{user}', [StoreController::class, 'removeUser'])->name('stores.remove-user');
+
+    // Banner management routes
+    Route::post('/stores/{store}/banners', [StoreController::class, 'storeBanner'])->name('stores.banners.store');
+    Route::delete('/stores/{store}/banners/{banner}', [StoreController::class, 'destroyBanner'])->name('stores.banners.destroy');
 
     // Component page routes
     Route::get('/components/alert', [ComponentpageController::class, 'alert'])->name('components.alert');
@@ -177,5 +182,7 @@ Route::middleware(['auth'])->group(function () {
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 Route::get('/shop/{product}', [ShopController::class, 'show'])->name('shop.show');
 
+//catalogue routes
+Route::get('/catalogue/generate', [CatalogueController::class, 'generatePdf'])->name('catalogue.generate');
 
 require __DIR__.'/auth.php';

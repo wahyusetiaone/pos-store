@@ -23,7 +23,7 @@
                             </ul>
                         </div>
                     @endif
-                    <form method="POST" action="{{ route('users.update', $user->id) }}">
+                    <form method="POST" action="{{ route('users.update', $user->id) }}" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
                         <div class="row gy-3">
@@ -71,14 +71,25 @@
                                     </span>
                                     <select name="role" class="form-control @error('role') is-invalid @enderror">
                                         <option value="">Pilih role</option>
-                                        <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Admin</option>
-                                        <option value="owner" {{ old('role', $user->role) == 'purchase' ? 'selected' : '' }}>Owner</option>
+                                        <option value="owner" {{ old('role', $user->role) == 'owner' ? 'selected' : '' }}>Owner</option>
+                                        <option value="admin_store" {{ old('role', $user->role) == 'admin_store' ? 'selected' : '' }}>Admin Toko</option>
+                                        <option value="purchase" {{ old('role', $user->role) == 'purchase' ? 'selected' : '' }}>Purchase</option>
                                         <option value="cashier" {{ old('role', $user->role) == 'cashier' ? 'selected' : '' }}>Kasir</option>
                                     </select>
                                     @error('role')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
+                            </div>
+                            <div class="col-md-12 text-center mb-3">
+                                <label class="form-label">Foto Profil</label>
+                                <div class="mb-2">
+                                    <img id="imgPreview" src="{{ $user->img_picture ? asset('storage/' . $user->img_picture) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) }}" alt="Preview" class="rounded-circle" style="width:100px;height:100px;object-fit:cover;">
+                                </div>
+                                <input type="file" name="img_picture" class="form-control @error('img_picture') is-invalid @enderror" accept="image/*" onchange="previewImage(event)">
+                                @error('img_picture')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary mt-4">Simpan Perubahan</button>
@@ -90,3 +101,13 @@
 </div>
 @endsection
 
+@section('scripts')
+<script>
+function previewImage(event) {
+    const [file] = event.target.files;
+    if (file) {
+        document.getElementById('imgPreview').src = URL.createObjectURL(file);
+    }
+}
+</script>
+@endsection

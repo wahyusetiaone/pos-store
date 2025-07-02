@@ -15,6 +15,12 @@
                 </div>
                 <div class="card-body">
                     <div class="row gy-3">
+                        <div class="col-md-12 text-center mb-3">
+                            <label class="form-label">Foto Profil</label>
+                            <div class="mb-2">
+                                <img src="{{ $user->img_picture ? asset('storage/' . $user->img_picture) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) }}" alt="Foto Profil" class="rounded-circle" style="width:100px;height:100px;object-fit:cover;">
+                            </div>
+                        </div>
                         <div class="col-md-6">
                             <label class="form-label">Nama</label>
                             <div class="icon-field">
@@ -49,4 +55,3 @@
     </div>
 </div>
 @endsection
-

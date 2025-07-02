@@ -28,11 +28,17 @@ class UsersController extends Controller
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
             'role' => 'required|exists:roles,name',
+            'img_picture' => 'nullable|image|max:2048',
         ]);
+        $imgPath = null;
+        if ($request->hasFile('img_picture')) {
+            $imgPath = $request->file('img_picture')->store('user_pictures', 'public');
+        }
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'img_picture' => $imgPath,
         ]);
         $user->assignRole($validated['role']);
         return redirect()->route('users.index')->with('success', 'Pengguna berhasil ditambahkan.');
@@ -58,7 +64,12 @@ class UsersController extends Controller
             'email' => 'required|email|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:6',
             'role' => 'required|exists:roles,name',
+            'img_picture' => 'nullable|image|max:2048',
         ]);
+        if ($request->hasFile('img_picture')) {
+            $imgPath = $request->file('img_picture')->store('user_pictures', 'public');
+            $user->img_picture = $imgPath;
+        }
         $user->name = $validated['name'];
         $user->email = $validated['email'];
         if (!empty($validated['password'])) {

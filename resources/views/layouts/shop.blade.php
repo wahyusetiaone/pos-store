@@ -45,15 +45,23 @@
                         <button type="button" data-bs-target="#mainBanner" data-bs-slide-to="2"></button>
                     </div>
                     <div class="carousel-inner rounded-4 overflow-hidden" style="max-height: 400px;">
-                        <div class="carousel-item active">
-                            <img src="https://placehold.co/1200x400?text=Special+Offer" class="d-block w-100" alt="Special Offer">
-                        </div>
-                        <div class="carousel-item">
-                            <img src="https://placehold.co/1200x400?text=New+Arrivals" class="d-block w-100" alt="New Arrivals">
-                        </div>
-                        <div class="carousel-item">
-                            <img src="https://placehold.co/1200x400?text=Best+Deals" class="d-block w-100" alt="Best Deals">
-                        </div>
+                        @if(isset($store) && $store->banners && count($store->banners))
+                            @foreach($store->banners as $i => $banner)
+                                <div class="carousel-item{{ $i === 0 ? ' active' : '' }}">
+                                    <img src="{{ asset('storage/'.$banner->path) }}" class="d-block w-100" alt="Store Banner {{ $i + 1 }}">
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="carousel-item active">
+                                <img src="https://placehold.co/1200x400?text=Special+Offer" class="d-block w-100" alt="Special Offer">
+                            </div>
+                            <div class="carousel-item">
+                                <img src="https://placehold.co/1200x400?text=New+Arrivals" class="d-block w-100" alt="New Arrivals">
+                            </div>
+                            <div class="carousel-item">
+                                <img src="https://placehold.co/1200x400?text=Best+Deals" class="d-block w-100" alt="Best Deals">
+                            </div>
+                        @endif
                     </div>
                     <button class="carousel-control-prev" type="button" data-bs-target="#mainBanner" data-bs-slide="prev">
                         <span class="carousel-control-prev-icon"></span>

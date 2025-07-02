@@ -15,6 +15,7 @@ class Store extends Model
         'email',
         'description',
         'logo',
+        'img_logo',
         'is_active'
     ];
 
@@ -61,5 +62,10 @@ class Store extends Model
     public function settings(): HasMany
     {
         return $this->hasMany(Setting::class);
+    }
+
+    public function banners(): HasMany
+    {
+        return $this->hasMany(Banner::class);
     }
 }

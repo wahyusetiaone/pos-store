@@ -23,7 +23,7 @@
                             </ul>
                         </div>
                     @endif
-                    <form method="POST" action="{{ route('users.store') }}">
+                    <form method="POST" action="{{ route('users.store') }}" enctype="multipart/form-data">
                         @csrf
                         <div class="row gy-3">
                             <div class="col-md-6">
@@ -70,14 +70,24 @@
                                     </span>
                                     <select name="role" class="form-control @error('role') is-invalid @enderror">
                                         <option value="">Pilih role</option>
-                                        <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Admin</option>
-                                        <option value="owner" {{ old('role') == 'owner' ? 'selected' : '' }}>Owner</option>
+                                        <option value="admin_store" {{ old('role') == 'admin_store' ? 'selected' : '' }}>Admin Toko</option>
+                                        <option value="purchase" {{ old('role') == 'purchase' ? 'selected' : '' }}>Purchase</option>
                                         <option value="cashier" {{ old('role') == 'cashier' ? 'selected' : '' }}>Kasir</option>
                                     </select>
                                     @error('role')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
+                            </div>
+                            <div class="col-md-12 text-center mb-3">
+                                <label class="form-label">Foto Profil</label>
+                                <div class="mb-2">
+                                    <img id="imgPreview" src="https://ui-avatars.com/api/?name=User" alt="Preview" class="rounded-circle" style="width:100px;height:100px;object-fit:cover;">
+                                </div>
+                                <input type="file" name="img_picture" class="form-control @error('img_picture') is-invalid @enderror" accept="image/*" onchange="previewImage(event)">
+                                @error('img_picture')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary mt-4">Simpan</button>
@@ -89,3 +99,13 @@
 </div>
 @endsection
 
+@section('scripts')
+<script>
+function previewImage(event) {
+    const [file] = event.target.files;
+    if (file) {
+        document.getElementById('imgPreview').src = URL.createObjectURL(file);
+    }
+}
+</script>
+@endsection

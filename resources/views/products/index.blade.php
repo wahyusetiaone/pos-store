@@ -3,9 +3,22 @@
 @php
     $title = 'Daftar Produk';
     $subTitle = 'Tabel Produk';
-    $script = '
-        <script src="' . asset('assets/js/pages/product/index.js') . '"></script>
-    ';
+$script = '
+    <script src="' . asset('assets/js/pages/product/index.js') . '"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".product-thumb").forEach(function(img) {
+            img.addEventListener("click", function() {
+                let src = this.getAttribute("data-img");
+                let modal = document.getElementById("imgModal");
+                document.getElementById("imgModalSrc").src = src;
+                let bsModal = new bootstrap.Modal(modal);
+                bsModal.show();
+            });
+        });
+    });
+    </script>
+';
 @endphp
 
 @section('styles')
@@ -56,6 +69,9 @@
                                 Import Produk
                             </button>
                         @endif
+                        <button type="button" class="btn btn-warning me-2" data-bs-toggle="modal" data-bs-target="#downloadCatalogueModal">
+                            <i class="fa fa-download"></i> Download Katalog
+                        </button>
                         <a href="{{ route('products.create') }}" class="btn btn-success">Tambah Produk</a>
                     </div>
                 </form>
@@ -90,6 +106,7 @@
                                     </div>
                                 </th>
                                 <th>No</th>
+                                <th>Foto</th>
                                 @if(auth()->user()->hasGlobalAccess())
                                     <th>Nama Toko</th>
                                 @endif
@@ -122,12 +139,19 @@
                                                value="{{ $product->id }}" data-stock="{{ $product->stock }}">
                                     </div>
                                 </td>
+                                <td>
+                                    @if($product->images && $product->images->count())
+                                        <img src="{{ asset('storage/' . $product->images->first()->path) }}" alt="Foto Produk" style="width:40px; height:40px; object-fit:cover; cursor:pointer;" class="product-thumb" data-img="{{ asset('storage/' . $product->images->first()->path) }}">
+                                    @else
+                                        <img src="{{ asset('assets/images/no-image.png') }}" alt="No Image" style="width:40px; height:40px; object-fit:cover; cursor:pointer;" class="product-thumb" data-img="{{ asset('assets/images/no-image.png') }}">
+                                    @endif
+                                </td>
                                 <td>{{ ($products->currentPage() - 1) * $products->perPage() + $loop->iteration }}</td>
                                 @if(auth()->user()->hasGlobalAccess())
                                     <td>{{ $product->store->name ?? '-' }}</td>
                                 @endif
                                 <td>{{ $product->sku }}</td>
-                                <td>{{ $product->name }}</td>
+                                <td>{{ Str::limit($product->name, 50, '...') }}</td>
                                 <td>{{ $product->category->name ?? '-' }}</td>
                                 <td>
                                     <img src="data:image/png;base64,{{ DNS1D::getBarcodePNG($product->sku, 'C128', 1.2, 40) }}" alt="Barcode" style="max-width:120px; max-height:40px;">
@@ -227,5 +251,51 @@
 </div>
 @endif
 
+<!-- Download Catalogue Modal -->
+<div class="modal fade" id="downloadCatalogueModal" tabindex="-1" aria-labelledby="downloadCatalogueModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="downloadCatalogueModalLabel">Download Katalog Produk</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="catalogueDownloadForm" method="GET" action="{{ route('catalogue.generate') }}" target="_blank">
+        <div class="modal-body">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="radio" name="range" id="range_all" value="all" checked>
+            <label class="form-check-label" for="range_all">Semua Produk</label>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="radio" name="range" id="range_selected" value="selected">
+            <label class="form-check-label" for="range_selected">Produk Terpilih Saja</label>
+          </div>
+          <div id="selectedProductSection" style="display:none;">
+            <input type="hidden" name="product_ids" id="selectedProductIds">
+            <div class="alert alert-info mt-2">
+              Hanya produk yang dicentang di tabel yang akan diunduh.
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">Download</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Modal for image preview -->
+<div class="modal fade" id="imgModal" tabindex="-1" aria-labelledby="imgModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imgModalLabel">Foto Produk</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="imgModalSrc" src="" alt="Foto Produk" style="max-width:100%; max-height:400px;">
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
-
